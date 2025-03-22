@@ -35,7 +35,7 @@ Examples:
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, TypedDict
+from typing import Dict, List, NamedTuple, Optional, Tuple, TypedDict
 
 from swankit.core.data import DataSuite as D
 from swankit.core.data import MediaBuffer, MediaType
@@ -46,6 +46,18 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+
+class Color(NamedTuple):
+    r: int
+    g: int
+    b: int
+
+
+class Point(NamedTuple):
+    x: float
+    y: float
+    z: float
 
 
 class Box(TypedDict):
@@ -72,8 +84,8 @@ class Box(TypedDict):
         score (float): A confidence score representing the certainty of the bounding box's object detection.
     """
 
-    color: Tuple[int, int, int]
-    corners: List[Tuple[float, float, float]]
+    color: Color
+    corners: List[Point]
     label: str
     score: Optional[float]
 
@@ -240,12 +252,11 @@ class PointCloud(MediaType):
         for box_data in boxes_data:
             try:
                 box: Box = {
-                    "color": tuple(box_data["color"]),
-                    "corners": [tuple(p) for p in box_data["corners"]],
+                    "color": Color(*box_data["color"]),
+                    "corners": [Point(*p) for p in box_data["corners"]],
                     "label": box_data["label"],
+                    "score": box_data.get("score")
                 }
-                if "score" in box_data:
-                    box["score"] = box_data["score"]
                 pc.append_box(box)
             except (KeyError, TypeError) as err:
                 raise ValueError(f"Invalid box format: {err}") from err
